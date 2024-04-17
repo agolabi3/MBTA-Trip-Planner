@@ -30,6 +30,7 @@ form {
 
 input, select, button {
     width: 100%; /* Full-width on mobile*/
+    height: 40px;
     padding: 10px;
 }
 
