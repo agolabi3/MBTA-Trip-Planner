@@ -122,6 +122,13 @@ document.getElementById('routeForm').addEventListener('submit', function(event) 
     event.preventDefault();  // Prevent the default form submission behavior.
     const startStop = document.getElementById('startStop').value;
     const endStop = document.getElementById('endStop').value;
+
+    // Check if the start and end stops are the same and notify the user.
+    if (startStop === endStop) {
+        document.getElementById('result').textContent = "You're already at the location you selected!";
+        return;  // Exit the function early to avoid unnecessary processing.
+    }
+
     const startRoutes = stopMap[startStop].routes;
     const endRoutes = stopMap[endStop].routes;
 
@@ -133,7 +140,7 @@ document.getElementById('routeForm').addEventListener('submit', function(event) 
         const commonRoute = startRoutes.find(r => endRoutes.includes(r));
         resultText = `Take the ${commonRoute} from ${stopMap[startStop].name} to ${stopMap[endStop].name}.`;
     } else {
-        // If no direct route, compute possible connections and format the result text.
+        // If no direct route, give possible connections and format the result text.
         const possibleConnections = startRoutes.flatMap(r1 => endRoutes.map(r2 => ({ from: r1, to: r2 })));
         resultText = 'Connections required: ' + possibleConnections.map(conn => `${conn.from} to ${conn.to}`).join(', ');
     }
