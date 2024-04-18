@@ -119,33 +119,50 @@ async function fetchAndPopulateData() {
 
 // Listen for form submission to calculate and display the route or required connections.
 document.getElementById('routeForm').addEventListener('submit', function(event) {
-    event.preventDefault();  // Prevent the default form submission behavior.
-    const startStop = document.getElementById('startStop').value;
-    const endStop = document.getElementById('endStop').value;
+    event.preventDefault();
+    const startStopId = document.getElementById('startStop').value;
+    const endStopId = document.getElementById('endStop').value;
 
-    // Check if the start and end stops are the same and notify the user.
-    if (startStop === endStop) {
-        document.getElementById('result').textContent = "You're already at the location you selected!";
-        return;  // Exit the function early to avoid unnecessary processing.
+    // Prevent if the selected start and end stops are the same.
+    if (startStopId === endStopId) {
+        document.getElementById('result').innerHTML = "You're already at the location you selected!";
+        return;
     }
 
-    const startRoutes = stopMap[startStop].routes;
-    const endRoutes = stopMap[endStop].routes;
+    const startRoutes = stopMap[startStopId].routes; // Routes available from the start stop.
+    const endRoutes = stopMap[endStopId].routes; // Routes available from the end stop.
 
-    // Initialize the output message for no route found by default.
-    let resultText = 'No direct route or connection available.';
-    // Check if any route exists directly between the selected stops.
-    if (startRoutes.some(r => endRoutes.includes(r))) {
-        // Find the common route and construct the result text using the full stop names.
-        const commonRoute = startRoutes.find(r => endRoutes.includes(r));
-        resultText = `Take the ${commonRoute} from ${stopMap[startStop].name} to ${stopMap[endStop].name}.`;
+    let routeResults = []; // Store result strings.
+
+    // Check for direct routes between start and end stops.
+    const commonRoutes = startRoutes.filter(route => endRoutes.includes(route));
+    if (commonRoutes.length > 0) {
+        commonRoutes.forEach(route => {
+            routeResults.push(`Take the ${route} from ${stopMap[startStopId].name} to ${stopMap[endStopId].name}.`);
+        });
     } else {
-        // If no direct route, give possible connections and format the result text.
-        const possibleConnections = startRoutes.flatMap(r1 => endRoutes.map(r2 => ({ from: r1, to: r2 })));
-        resultText = 'Connections required: ' + possibleConnections.map(conn => `${conn.from} to ${conn.to}`).join(', ');
+        // Calculate indirect routes if no direct route is found.
+        startRoutes.forEach(startRoute => {
+            const startRouteStops = routes.find(r => r.name === startRoute).stops;
+            endRoutes.forEach(endRoute => {
+                const endRouteStops = routes.find(r => r.name === endRoute).stops;
+                const transferStops = [...startRouteStops].filter(stop => endRouteStops.has(stop));
+                transferStops.forEach(transferStop => {
+                    routeResults.push(`Take the ${startRoute} to ${stopMap[transferStop].name}, then transfer to ${endRoute}.`);
+                });
+            });
+        });
+
+        // Provide a message if no possible routes are found.
+        if (routeResults.length === 0) {
+            routeResults.push('No route with a simple transfer available.');
+        }
     }
-    document.getElementById('result').textContent = resultText;  // Display the result in the 'result' div.
+
+    // Join all results with HTML line breaks for browser.
+    document.getElementById('result').innerHTML = routeResults.join('<br>');
 });
+
 
 // Call to fetch data and populate dropdowns as soon as the script loads.
 fetchAndPopulateData();
